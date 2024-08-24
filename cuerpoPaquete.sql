@@ -1,0 +1,113 @@
+/*<TOAD_FILE_CHUNK>*/
+-- CREACIÓN DEL PAQUETE
+CREATE OR REPLACE PACKAGE AUDITEX.PQ_ACCESOSUSU IS
+    PROCEDURE SPU_ADMIN_ACCESOS_AUDITEX(
+        I_OPCION NUMBER DEFAULT NULL,
+        I_CODUSU NUMBER DEFAULT NULL, 
+        O_CURSOR OUT SYS_REFCURSOR
+    );
+    
+    PROCEDURE ADMINISTRAR_ACCESOS_AUDITEX(
+        I_OPCION    NUMBER DEFAULT NULL,
+        I_CODUSU    NUMBER DEFAULT NULL,
+        I_CODN5     NUMBER DEFAULT NULL
+    );
+END PQ_ACCESOSUSU;
+/
+
+
+
+
+/*<TOAD_FILE_CHUNK>*/
+-- CREACIÓN DEL PAQUETE
+CREATE OR REPLACE PACKAGE AUDITEX.PQ_ACCESOSUSU_PRUEBA IS
+    PROCEDURE SPU_ADMIN_ACCESOS_AUDITEX(
+        I_OPCION NUMBER DEFAULT NULL,
+        I_CODUSU NUMBER DEFAULT NULL, 
+        O_CURSOR OUT SYS_REFCURSOR
+    );
+    
+    PROCEDURE ADMINISTRAR_ACCESOS_AUDITEX(
+        I_OPCION    NUMBER DEFAULT NULL,
+        I_CODUSU    NUMBER DEFAULT NULL,
+        I_CODN5     NUMBER DEFAULT NULL
+    );
+END PQ_ACCESOSUSU_PRUEBA;
+/
+
+
+
+-- CREAR CUERPO DEL PAQUETE
+CREATE OR REPLACE PACKAGE BODY AUDITEX.PQ_ACCESOSUSU_PRUEBA IS 
+    PROCEDURE SPU_ADMIN_ACCESOS_AUDITEX(
+        I_OPCION NUMBER DEFAULT NULL,
+        I_CODUSU NUMBER DEFAULT NULL, 
+        O_CURSOR OUT SYS_REFCURSOR
+    )
+    AS
+    BEGIN
+        IF I_OPCION = 1 THEN
+            --LISTA DE USUARIOS ACTIVOS
+            OPEN O_CURSOR FOR
+                SELECT 
+                    CODUSU,
+                    DNIUSU,
+                    NOMUSU                
+                FROM AUDITEX.USUARIO
+                WHERE ESTADO = 'A';
+        END IF;
+    
+        IF I_OPCION = 2 THEN
+            --LSTA DE ACCESOS EN NIVEL 5
+            OPEN O_CURSOR FOR
+                SELECT
+                    CODN5,
+                    NIVEL5
+                FROM AUDITEX.TSC_NIVEL5;
+        END IF;
+    
+        IF I_OPCION = 3 THEN
+            OPEN O_CURSOR FOR
+                SELECT
+                    ACCS.COD_USU,
+                    ACCS.CODN5,
+                    N5.NIVEL5,
+                    ACCS.FLG_ACTIVO
+                FROM AUDITEX.TSC_ACCESOS ACCS
+                INNER JOIN AUDITEX.TSC_NIVEL5 N5 ON N5.CODN5 = ACCS.CODN5
+                WHERE ACCS.COD_USU = I_CODUSU;
+        END IF;
+    END;
+
+
+    PROCEDURE ADMINISTRAR_ACCESOS_AUDITEX
+    (
+        I_OPCION    NUMBER DEFAULT NULL,
+        I_CODUSU    NUMBER DEFAULT NULL,
+        I_CODN5     NUMBER DEFAULT NULL
+    ) 
+    AS
+    BEGIN
+        --REGISTRA UN ACCESO    
+        IF I_OPCION = 1 THEN
+            INSERT INTO AUDITEX.TSC_ACCESOS(COD_USU,CODN5, FECHA_CREACION, FLG_ACTIVO)
+            VALUES (I_CODUSU, I_CODN5, SYSDATE, 1);
+        END IF;
+        
+        --ELIMINA DE FORMA LÓGICA
+        IF I_OPCION = 2 THEN
+            UPDATE AUDITEX.TSC_ACCESOS
+                SET
+                    FLG_ACTIVO = 0
+                WHERE COD_USU = I_CODUSU;
+        END IF;
+        
+        --REACTIVA
+        IF I_OPCION = 3 THEN
+            UPDATE AUDITEX.TSC_ACCESOS
+                SET
+                    FLG_ACTIVO = 1
+                WHERE COD_USU = I_CODUSU; 
+        END IF;
+    END;
+END;
