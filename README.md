@@ -1,3 +1,8 @@
 # SCRIPTS DE SQL
-1.SQL server 
-1.Toad for Oracle
+
+* SQL server
+* Toad for Oracle
+* SQL Plus
+* SQL Developer
+
+[Ver documentación](./Doc)
